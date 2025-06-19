@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import base64
+import matplotlib
 
 ENGINE_LOG_PATH = "engine_log.csv"
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"
@@ -24,7 +25,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-st.title("🚢 Engine Log Monitoring System")
 
 # Utility function to load engine log data
 def load_data(path):

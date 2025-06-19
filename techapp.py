@@ -193,9 +193,31 @@ with tab2:
             selected_cols = [col for col in display_cols[view_option] if col in filtered.columns]
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
+            # Average row
             avg_row = {col: filtered[col].mean() if pd.api.types.is_numeric_dtype(filtered[col]) else "" for col in selected_cols}
             avg_row["Date"] = "Average"
             avg_df = pd.concat([display_df, pd.DataFrame([avg_row])], ignore_index=True)
 
+            # Render table
             st.markdown("<style>thead th {font-size: 10px !important; white-space: normal !important; word-wrap: break-word !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)
             st.dataframe(avg_df, use_container_width=True, height=500)
+
+            # Optional plot: ME CONSUMPTION HFO AT SEA
+            if view_option == "⛽ Fuel Consumption" and "ME CONSUMPTION HFO AT SEA" in filtered.columns:
+                st.markdown("### 📈 ME Consumption HFO at Sea - Trend")
+                plot_df = filtered[["Date", "ME CONSUMPTION HFO AT SEA"]].dropna().sort_values("Date")
+
+                if not plot_df.empty:
+                    import matplotlib.pyplot as plt
+                    import matplotlib.dates as mdates
+
+                    fig, ax = plt.subplots(figsize=(10, 4))
+                    ax.plot(plot_df["Date"], plot_df["ME CONSUMPTION HFO AT SEA"], marker='o')
+                    ax.set_title("ME Consumption HFO at Sea")
+                    ax.set_xlabel("Date")
+                    ax.set_ylabel("HFO Consumption")
+                    ax.xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%y'))
+                    ax.grid(True)
+                    st.pyplot(fig)
+                else:
+                    st.info("No data available for plotting.")

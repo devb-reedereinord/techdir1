@@ -2,10 +2,28 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+import base64
 
 ENGINE_LOG_PATH = "engine_log.csv"
+logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"
 
 st.set_page_config(page_title="Engine Log Dashboard", layout="wide")
+
+st.markdown(
+    f"""
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="flex-grow: 1;">
+            <h1 style="margin-bottom: 0;">🚢 Engine Log Monitoring System</h1>
+        </div>
+        <div style="flex-shrink: 0;">
+            <img src="data:image/jpeg;base64,{base64.b64encode(open(logo_path, "rb").read()).decode()}" 
+                 alt="Reederei Nord Logo" style="height: 60px; margin-left: 20px;" />
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
 st.title("🚢 Engine Log Monitoring System")
 
 # Utility function to load engine log data

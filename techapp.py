@@ -126,6 +126,7 @@ with tab2:
         st.warning("No engine log data available.")
     else:
         df = df[df["Date"].notna()]
+        df['Date'] = pd.to_datetime(df['Date'], format="%d/%m/%Y", errors='coerce')
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
 

@@ -115,11 +115,10 @@ with tab1:
             with st.expander("Remarks"):
                 form_data["Remarks"] = st.text_area("Remarks")
 
-            if st.form_submit_button("Submit Entry"):
+            if st.form_submit_button("Submit Engine Log Entry"):
                 append_engine_log(form_data)
-                st.success("Log saved!")
+                st.success("Engine log entry saved.")
                 st.rerun()
-
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
     st.header("📊 Engine Log Dashboard")
@@ -127,7 +126,6 @@ with tab2:
         st.warning("No engine log data available.")
     else:
         df = df[df["Date"].notna()]
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce', dayfirst=True)
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
 

@@ -71,10 +71,10 @@ with tab1:
         # Move these inputs OUTSIDE the form so we can check date before rendering the form
     date = st.date_input("Date")
     vessel = st.selectbox("Select Vessel", vessel_list)
-    form_data = {"Date": date.strftime("%d/%m/%Y"), "Vessel": vessel}
+    form_data = {"Date": date.strftime("%Y-%m-%d %H:%M:%S"), "Vessel": vessel}
 
     with st.form("engine_log_form"):
-            form_data = {"Date": date, "Vessel": vessel}
+         
 
             for section, fields in section_map.items():
                 with st.expander(section):
@@ -119,6 +119,13 @@ with tab1:
             if st.form_submit_button("Submit Engine Log Entry"):
                 append_engine_log(form_data)
                 st.success("Engine log entry saved.")
+                
+                # Reset session state for all inputs
+                for key in list(st.session_state.keys()):
+                    if key not in ["form_submitted"]:
+                        del st.session_state[key]
+
+                st.session_state["form_submitted"] = True
                 st.rerun()
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
@@ -127,7 +134,8 @@ with tab2:
         st.warning("No engine log data available.")
     else:
         df = df[df["Date"].notna()]
-        df['Date'] = pd.to_datetime(df['Date'], format="%d/%m/%Y", errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df = df[df['Date'].notna()] 
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
 

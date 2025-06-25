@@ -70,8 +70,8 @@ with tab1:
 
         # Move these inputs OUTSIDE the form so we can check date before rendering the form
     date = st.date_input("Date")
-    form_data = {"Date": date.strftime("%d/%m/%Y"), "Vessel": vessel}
     vessel = st.selectbox("Select Vessel", vessel_list)
+    form_data = {"Date": date.strftime("%d/%m/%Y"), "Vessel": vessel}
 
     with st.form("engine_log_form"):
             form_data = {"Date": date, "Vessel": vessel}

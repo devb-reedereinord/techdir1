@@ -118,7 +118,7 @@ with tab1:
             if st.form_submit_button("Submit Entry"):
                 append_engine_log(form_data)
                 st.success("Log saved!")
-                st.experimental_rerun()
+                st.rerun()
 
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:

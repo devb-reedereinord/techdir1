@@ -115,10 +115,11 @@ with tab1:
             with st.expander("Remarks"):
                 form_data["Remarks"] = st.text_area("Remarks")
 
-            if st.form_submit_button("Submit Engine Log Entry"):
+            if st.form_submit_button("Submit Entry"):
                 append_engine_log(form_data)
-                st.success("Engine log entry saved.")
+                st.success("Log saved!")
                 st.experimental_rerun()
+
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
     st.header("📊 Engine Log Dashboard")

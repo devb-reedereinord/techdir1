@@ -130,26 +130,35 @@ with tab1:
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
     st.header("📊 Engine Log Dashboard")
-    if df.empty:
-        st.warning("No engine log data available.")
-    else:
-        df = df[df["Date"].notna()]
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        df = df[df['Date'].notna()] 
+
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df = df[df['Date'].notna()]  # Drop rows where date couldn't be parsed
+
+    if not df.empty and "Vessel" in df.columns:
         df['Year'] = df['Date'].dt.year
         df['Month'] = df['Date'].dt.month
 
         vessels = df["Vessel"].dropna().unique()
         selected_vessel = st.selectbox("Select Vessel", sorted(vessels))
 
-        selected_year = st.selectbox("Select Year", sorted(df['Year'].unique()))
+        selected_year = st.selectbox("Select Year", sorted(df['Year'].dropna().unique()))
         month_names = {1: "January", 2: "February", 3: "March", 4: "April",
                        5: "May", 6: "June", 7: "July", 8: "August",
                        9: "September", 10: "October", 11: "November", 12: "December"}
-        selected_month = st.selectbox("Select Month", [month_names[m] for m in sorted(df[df['Year'] == selected_year]['Month'].unique())])
+
+        # Filter available months for the selected year
+        available_months = df[df['Year'] == selected_year]['Month'].dropna().unique()
+        selected_month = st.selectbox(
+            "Select Month", [month_names[m] for m in sorted(available_months)]
+        )
         selected_month_num = {v: k for k, v in month_names.items()}[selected_month]
 
-        filtered = df[(df['Vessel'] == selected_vessel) & (df['Year'] == selected_year) & (df['Month'] == selected_month_num)]
+        # Filter the data for selected vessel, year, and month
+        filtered = df[
+            (df['Vessel'] == selected_vessel) &
+            (df['Year'] == selected_year) &
+            (df['Month'] == selected_month_num)
+        ]
 
         if filtered.empty:
             st.warning("No data available for the selected filters.")
@@ -212,7 +221,7 @@ with tab2:
             st.markdown("<style>thead th {font-size: 10px !important; white-space: normal !important; word-wrap: break-word !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)
             st.dataframe(avg_df, use_container_width=True, height=500)
 
-            # Optional plot: ME CONSUMPTION HFO AT SEA
+            # Optional plot
             if view_option == "⛽ Fuel Consumption" and "ME CONSUMPTION HFO AT SEA" in filtered.columns:
                 st.markdown("### 📈 ME Consumption HFO at Sea - Trend")
                 plot_df = filtered[["Date", "ME CONSUMPTION HFO AT SEA"]].dropna().sort_values("Date")
@@ -231,3 +240,5 @@ with tab2:
                     st.pyplot(fig)
                 else:
                     st.info("No data available for plotting.")
+    else:
+        st.warning("No valid data found in engine log file.")

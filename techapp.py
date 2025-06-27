@@ -226,7 +226,6 @@ with tab2:
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
             # --- FIX: Ensure unique and stripped column names ---
-            display_df.columns = pd.io.parsers.ParserBase({'names': display_df.columns})._maybe_dedup_names(display_df.columns)
             display_df.columns = [col.strip() for col in display_df.columns]
 
             avg_row = {}

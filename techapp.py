@@ -37,6 +37,13 @@ def load_data():
     return df
 
 def append_engine_log(new_row):
+    # Format the date to match Google Sheets' expected format (e.g., 7/12/2024 for 12 July 2024)
+    if 'Date' in new_row:
+        try:
+            parsed = datetime.strptime(new_row['Date'], "%Y-%m-%d")
+            new_row['Date'] = parsed.strftime("%d/%m/%Y")  # Convert to DD/MM/YYYY
+        except Exception:
+            pass
     sheet.append_row(list(new_row.values()))
 
 

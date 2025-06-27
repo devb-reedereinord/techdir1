@@ -17,7 +17,6 @@ sheet = client.open("EngineLogSheet").sheet1
 
 # Utility function to load engine log data
 def load_data():
-    # Use a custom expected header row to avoid duplicate detection errors
     raw_values = sheet.get_all_values()
     if not raw_values:
         return pd.DataFrame()
@@ -28,23 +27,23 @@ def load_data():
     df = pd.DataFrame(records, columns=clean_headers)
 
     if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], format="%Y-%m-%d", errors='coerce')
+
     for col in df.columns:
         try:
-            df[col] = pd.to_numeric(df[col])  # updated per warning
+            df[col] = pd.to_numeric(df[col])
         except:
             continue
     return df
 
 def append_engine_log(new_row):
-    # Convert the Date from yyyy-mm-dd (input) to dd/mm/yyyy string for Sheets
     if 'Date' in new_row:
         try:
             if isinstance(new_row['Date'], str):
                 parsed = datetime.strptime(new_row['Date'], "%Y-%m-%d")
             else:
                 parsed = new_row['Date']
-            new_row['Date'] = parsed.strftime("%d/%m/%Y")
+            new_row['Date'] = parsed.strftime("%Y-%m-%d")  # use ISO format
         except Exception as e:
             print("Date format error:", e)
     sheet.append_row([str(new_row.get(k, "")) for k in new_row])
@@ -118,7 +117,7 @@ with tab1:
             st.markdown("### 🔁 1st of Month Running Hours & ROB")
             with st.expander("1st of Month - Running Hours"):
                 form_data["1ST OF MONTH ME RUNNING HOURS"] = st.number_input("1st of Month ME Running Hours", step=0.1)
-                form_data["1ST OF MONTH AE1 RUNNING HOURS"] = st.number_input("1st of Month AE1 Running Hours", step=0.1)
+                form_data[e"1ST OF MONTH AE1 RUNNING HOURS"] = st.number_input("1st of Month AE1 Running Hours", step=0.1)
                 form_data["1ST OF MONTH AE2 RUNNING HOURS"] = st.number_input("1st of Month AE2 Running Hours", step=0.1)
                 form_data["1ST OF MONTH AE3 RUNNING HOURS"] = st.number_input("1st of Month AE3 Running Hours", step=0.1)
 

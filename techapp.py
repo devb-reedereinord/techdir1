@@ -17,16 +17,28 @@ sheet = client.open("EngineLogSheet").sheet1
 
 # Utility function to load engine log data
 def load_data():
-    data = sheet.get_all_records()
-    if data:
-        df = pd.DataFrame(data)
-        if 'Date' in df.columns:
-            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-        return df
-    return pd.DataFrame()
+    # Use a custom expected header row to avoid duplicate detection errors
+    raw_values = sheet.get_all_values()
+    if not raw_values:
+        return pd.DataFrame()
+
+    headers = raw_values[0]
+    clean_headers = [h.strip() for h in headers]
+    records = raw_values[1:]
+    df = pd.DataFrame(records, columns=clean_headers)
+
+    if 'Date' in df.columns:
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    for col in df.columns:
+        try:
+            df[col] = pd.to_numeric(df[col], errors='ignore')
+        except:
+            continue
+    return df
 
 def append_engine_log(new_row):
     sheet.append_row(list(new_row.values()))
+
 
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"
 st.set_page_config(page_title="Engine Log Dashboard", layout="wide")

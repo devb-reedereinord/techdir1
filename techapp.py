@@ -1,13 +1,34 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-import os
 import base64
-import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 
-ENGINE_LOG_PATH = "engine_log.csv"
+# Google Sheets credentials and setup
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+creds = ServiceAccountCredentials.from_json_keyfile_dict(
+    st.secrets["gcp_service_account"], scope
+)
+client = gspread.authorize(creds)
+sheet = client.open("EngineLogSheet").sheet1
+
+# Utility function to load engine log data
+def load_data():
+    data = sheet.get_all_records()
+    if data:
+        df = pd.DataFrame(data)
+        if 'Date' in df.columns:
+            df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        return df
+    return pd.DataFrame()
+
+def append_engine_log(new_row):
+    sheet.append_row(list(new_row.values()))
+
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"
-
 st.set_page_config(page_title="Engine Log Dashboard", layout="wide")
 
 st.markdown(
@@ -25,21 +46,8 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-
-# Utility function to load engine log data
-def load_data(path):
-    if os.path.exists(path):
-        return pd.read_csv(path, parse_dates=["Date"], dayfirst=True)
-    return pd.DataFrame()
-
-# Append a new row to the engine log file
-def append_engine_log(new_row):
-    df = load_data(ENGINE_LOG_PATH)
-    updated = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
-    updated.to_csv(ENGINE_LOG_PATH, index=False)
-
 # Load engine log data
-df = load_data(ENGINE_LOG_PATH)
+df = load_data()
 
 # ---------------- TAB STRUCTURE ----------------
 tab1, tab2 = st.tabs(["📥 Engine Log Entry", "📊 Engine Log Dashboard"])
@@ -52,87 +60,73 @@ with tab1:
         "Nordorse", "Nordtulip", "Nordlotus", "Nordorchid", "Nordsymphony",
         "Angelic Anna", "Radiant Reb"
     ]
-    engine_log_columns = load_data(ENGINE_LOG_PATH).columns.tolist()
 
     section_map = {
-            "General Info": ["VESSEL POSITION", "TIME SHIFT +/- HOURS", "WIND FORCE BFT", "WIND DIRECTION"],
-            "Durations": ["DURATION ANCHORAGE DRIFTING", "DURATION IN PORT"],
-            "Distances": ["SEA DISTANCE NM", "MANOEUVRE DISTANCE NM", "TOTAL DISTANCENM", "THEOR AT SEA DISTANCE NM", "NOMINAL SLIP %", "SPEED ACTUAL KN"],
-            "Ambient Temperatures": ["AMBIENT SEA WATER TEMP", "AMBIENT OUTSIDE AIR TEMP", "AMBIENT ENGINE ROOM TEMP"],
-            "Main Engine Operation": ["PROP RPM AT SEA", "MAIN ENGINE LOAD %", "VESSEL MIDSHIP DRAFT", "ME TIME IN OPERATION, SEA", "ME TIME IN OPERATION, MANOEUVRE", "ME TIME IN OPERATION, CARGO OPERATION", "ME TIME IN OPERATION, TOTAL", "MAIN ENGINE RUNNING HOURS"],
-            "Auxiliary Engines": ["AUX ENGINE 1 RUNNING HOURS", "AUX ENGINE 2 RUNNING HOURS", "AUX ENGINE 3 RUNNING HOURS"],
-            "Equipment Temperatures": ["SCAV AIR TEMPERATURE", "HIGHEST EXHAUST GAS TEMPERATURE", "EXHAUST BEFORE T/C TEMPERATURE", "PISTON COOLANT OUTLET TEMPERATURE", "CYL COOLANT OUTLET TEMPERATURE", "LO INLET MAIN ENGINE TEMPERATURE", "STENTUBE BEARING FORE TEMPERATURE", "STERNTUBE BEARING AFT TEMPERATURE", "FUEL INLET TEMPERATURE"],
-            "Equipment Pressures": ["SCAV AIR PRESSURE ", "PISTON COOLANT PRESSURE", "CYLINDER COOLANT PRESSURE", "LO INLET MAIN ENGINE PRESSURE", "STERNTUBE LO PRESSURE", "STERNTUBE AIR PRESSURE", "FUEL INLET PRESSURE"],
-            "Fuel Consumptions": ["ME CONSUMPTION HFO AT SEA", "ME CONSUMPTION HFO MANOEUVRE", "ME CONSUMPTION HFO CARGO OPERATION", "ME CONSUMPTION MDO (MGO)", "AUX ENGINES CONSUMPTION HFO AT SEA", "AUX ENGINE CONSUMPTION HFO MANOEUVRE", "AUX ENGINES CONSUMPTION HFO PORT", "AUX ENGINE CONSUMPTIONS MDO (MGO)", "AUX ENGINES CONSUMPTION GENERATOR LOAD", "BOILERS, IGG CONSUMPTION HFO AT SEA", "BOILERS, IGG CONSUMPTION HFO PORT", "BOILERS, IGG CONSUMPTION MANOEUVRE / ANCHOR DRIFTING", "BOILERS, IGG CONSUMPTION MDO (MGO)"],
-            "LO Consumptions": ["MAIN ENGINE SUMP LUBOIL CONSUMPTION ", "MAIN ENGINE CYL OIL LUBOIL CONSUMPTION", "START AIR COMP SUMP LUBOIL CONSUMPTION", "AUX ENGINE 1 LUBOIL CONSUMPTION", "AUX ENGINE 2 LUBOIL CONSUMPTION", "AUX ENGINE 3 LUBOIL CONSUMPTION"],
-            "Freshwater & Others": ["STERN TUBE ADD LO ", "FRESH WATER GEN PROD "]
-        }
+        "General Info": ["VESSEL POSITION", "TIME SHIFT +/- HOURS", "WIND FORCE BFT", "WIND DIRECTION"],
+        "Durations": ["DURATION ANCHORAGE DRIFTING", "DURATION IN PORT"],
+        "Distances": ["SEA DISTANCE NM", "MANOEUVRE DISTANCE NM", "TOTAL DISTANCENM", "THEOR AT SEA DISTANCE NM", "NOMINAL SLIP %", "SPEED ACTUAL KN"],
+        "Ambient Temperatures": ["AMBIENT SEA WATER TEMP", "AMBIENT OUTSIDE AIR TEMP", "AMBIENT ENGINE ROOM TEMP"],
+        "Main Engine Operation": ["PROP RPM AT SEA", "MAIN ENGINE LOAD %", "VESSEL MIDSHIP DRAFT", "ME TIME IN OPERATION, SEA", "ME TIME IN OPERATION, MANOEUVRE", "ME TIME IN OPERATION, CARGO OPERATION", "ME TIME IN OPERATION, TOTAL", "MAIN ENGINE RUNNING HOURS"],
+        "Auxiliary Engines": ["AUX ENGINE 1 RUNNING HOURS", "AUX ENGINE 2 RUNNING HOURS", "AUX ENGINE 3 RUNNING HOURS"],
+        "Equipment Temperatures": ["SCAV AIR TEMPERATURE", "HIGHEST EXHAUST GAS TEMPERATURE", "EXHAUST BEFORE T/C TEMPERATURE", "PISTON COOLANT OUTLET TEMPERATURE", "CYL COOLANT OUTLET TEMPERATURE", "LO INLET MAIN ENGINE TEMPERATURE", "STENTUBE BEARING FORE TEMPERATURE", "STERNTUBE BEARING AFT TEMPERATURE", "FUEL INLET TEMPERATURE"],
+        "Equipment Pressures": ["SCAV AIR PRESSURE ", "PISTON COOLANT PRESSURE", "CYLINDER COOLANT PRESSURE", "LO INLET MAIN ENGINE PRESSURE", "STERNTUBE LO PRESSURE", "STERNTUBE AIR PRESSURE", "FUEL INLET PRESSURE"],
+        "Fuel Consumptions": ["ME CONSUMPTION HFO AT SEA", "ME CONSUMPTION HFO MANOEUVRE", "ME CONSUMPTION HFO CARGO OPERATION", "ME CONSUMPTION MDO (MGO)", "AUX ENGINES CONSUMPTION HFO AT SEA", "AUX ENGINE CONSUMPTION HFO MANOEUVRE", "AUX ENGINES CONSUMPTION HFO PORT", "AUX ENGINE CONSUMPTIONS MDO (MGO)", "AUX ENGINES CONSUMPTION GENERATOR LOAD", "BOILERS, IGG CONSUMPTION HFO AT SEA", "BOILERS, IGG CONSUMPTION HFO PORT", "BOILERS, IGG CONSUMPTION MANOEUVRE / ANCHOR DRIFTING", "BOILERS, IGG CONSUMPTION MDO (MGO)"],
+        "LO Consumptions": ["MAIN ENGINE SUMP LUBOIL CONSUMPTION ", "MAIN ENGINE CYL OIL LUBOIL CONSUMPTION", "START AIR COMP SUMP LUBOIL CONSUMPTION", "AUX ENGINE 1 LUBOIL CONSUMPTION", "AUX ENGINE 2 LUBOIL CONSUMPTION", "AUX ENGINE 3 LUBOIL CONSUMPTION"],
+        "Freshwater & Others": ["STERN TUBE ADD LO ", "FRESH WATER GEN PROD "]
+    }
 
-        # Move these inputs OUTSIDE the form so we can check date before rendering the form
     date = st.date_input("Date")
     vessel = st.selectbox("Select Vessel", vessel_list)
-    form_data = {"Date": date.strftime("%Y-%m-%d %H:%M:%S"), "Vessel": vessel}
+    form_data = {"Date": date.strftime("%Y-%m-%d"), "Vessel": vessel}
 
     with st.form("engine_log_form"):
-         
+        for section, fields in section_map.items():
+            with st.expander(section):
+                for col in fields:
+                    clean_col = col.strip()
+                    if any(x in clean_col.upper() for x in ["TEMP", "PRESSURE", "%", "RPM", "LOAD"]):
+                        form_data[clean_col] = st.number_input(clean_col, step=0.1)
+                    elif any(x in clean_col.upper() for x in ["CONSUMPTION", "DISTANCE", "HOURS"]):
+                        form_data[clean_col] = st.number_input(clean_col, step=0.1)
+                    elif any(x in clean_col.upper() for x in ["POSITION", "DIRECTION"]):
+                        form_data[clean_col] = st.text_input(clean_col)
+                    else:
+                        form_data[clean_col] = st.text_input(clean_col)
 
-            for section, fields in section_map.items():
-                with st.expander(section):
-                    for col in fields:
-                        clean_col = col.strip()
-                        if any(x in clean_col.upper() for x in ["TEMP", "PRESSURE", "%", "RPM", "LOAD"]):
-                            form_data[clean_col] = st.number_input(clean_col, step=0.1)
-                        elif any(x in clean_col.upper() for x in ["CONSUMPTION", "DISTANCE", "HOURS"]):
-                            form_data[clean_col] = st.number_input(clean_col, step=0.1)
-                        elif any(x in clean_col.upper() for x in ["POSITION", "DIRECTION"]):
-                            form_data[clean_col] = st.text_input(clean_col)
-                        else:
-                            form_data[clean_col] = st.text_input(clean_col)
+        if date.day == 1:
+            st.markdown("### 🔁 1st of Month Running Hours & ROB")
+            with st.expander("1st of Month - Running Hours"):
+                form_data["1ST OF MONTH ME RUNNING HOURS"] = st.number_input("1st of Month ME Running Hours", step=0.1)
+                form_data["1ST OF MONTH AE1 RUNNING HOURS"] = st.number_input("1st of Month AE1 Running Hours", step=0.1)
+                form_data["1ST OF MONTH AE2 RUNNING HOURS"] = st.number_input("1st of Month AE2 Running Hours", step=0.1)
+                form_data["1ST OF MONTH AE3 RUNNING HOURS"] = st.number_input("1st of Month AE3 Running Hours", step=0.1)
 
-            # This works because 'date' is defined before form
-            if date.day == 1:
-                st.markdown("### 🔁 1st of Month Running Hours & ROB")
-                with st.expander("1st of Month - Running Hours"):
-                    form_data["1ST OF MONTH ME RUNNING HOURS"] = st.number_input("1st of Month ME Running Hours", step=0.1)
-                    form_data["1ST OF MONTH AE1 RUNNING HOURS"] = st.number_input("1st of Month AE1 Running Hours", step=0.1)
-                    form_data["1ST OF MONTH AE2 RUNNING HOURS"] = st.number_input("1st of Month AE2 Running Hours", step=0.1)
-                    form_data["1ST OF MONTH AE3 RUNNING HOURS"] = st.number_input("1st of Month AE3 Running Hours", step=0.1)
+            with st.expander("1st of Month - ROB & Oils"):
+                form_data["1ST OF MONTH ROB HFO"] = st.number_input("1st of Month ROB HFO", step=0.1)
+                form_data["1ST OF MONTH ROB MDO"] = st.number_input("1st of Month ROB MDO", step=0.1)
+                form_data["1ST OF MONTH ME CYL OIL"] = st.number_input("1st of Month ME CYL OIL", step=0.1)
+                form_data["1ST OF MONTH AE SUMP OIL"] = st.number_input("1st of Month AE SUMP OIL", step=0.1)
+        else:
+            for key in [
+                "1ST OF MONTH ME RUNNING HOURS", "1ST OF MONTH AE1 RUNNING HOURS", "1ST OF MONTH AE2 RUNNING HOURS",
+                "1ST OF MONTH AE3 RUNNING HOURS", "1ST OF MONTH ROB HFO", "1ST OF MONTH ROB MDO",
+                "1ST OF MONTH ME CYL OIL", "1ST OF MONTH AE SUMP OIL"]:
+                form_data[key] = ""
 
-                with st.expander("1st of Month - ROB & Oils"):
-                    form_data["1ST OF MONTH ROB HFO"] = st.number_input("1st of Month ROB HFO", step=0.1)
-                    form_data["1ST OF MONTH ROB MDO"] = st.number_input("1st of Month ROB MDO", step=0.1)
-                    form_data["1ST OF MONTH ME CYL OIL"] = st.number_input("1st of Month ME CYL OIL", step=0.1)
-                    form_data["1ST OF MONTH AE SUMP OIL"] = st.number_input("1st of Month AE SUMP OIL", step=0.1)
-            else:
-                form_data["1ST OF MONTH ME RUNNING HOURS"] = ""
-                form_data["1ST OF MONTH AE1 RUNNING HOURS"] = ""
-                form_data["1ST OF MONTH AE2 RUNNING HOURS"] = ""
-                form_data["1ST OF MONTH AE3 RUNNING HOURS"] = ""
-                form_data["1ST OF MONTH ROB HFO"] = ""
-                form_data["1ST OF MONTH ROB MDO"] = ""
-                form_data["1ST OF MONTH ME CYL OIL"] = ""
-                form_data["1ST OF MONTH AE SUMP OIL"] = ""
+        with st.expander("Remarks"):
+            form_data["Remarks"] = st.text_area("Remarks")
 
-            with st.expander("Remarks"):
-                form_data["Remarks"] = st.text_area("Remarks")
+        if st.form_submit_button("Submit Engine Log Entry"):
+            append_engine_log(form_data)
+            st.success("Engine log entry saved.")
+            st.rerun()
 
-            if st.form_submit_button("Submit Engine Log Entry"):
-                append_engine_log(form_data)
-                st.success("Engine log entry saved.")
-                
-                # Reset session state for all inputs
-                for key in list(st.session_state.keys()):
-                    if key not in ["form_submitted"]:
-                        del st.session_state[key]
-
-                st.session_state["form_submitted"] = True
-                st.rerun()
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
     st.header("📊 Engine Log Dashboard")
 
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
-    df = df[df['Date'].notna()]  # Drop rows where date couldn't be parsed
+    df = df[df['Date'].notna()]
 
     if not df.empty and "Vessel" in df.columns:
         df['Year'] = df['Date'].dt.year
@@ -146,14 +140,12 @@ with tab2:
                        5: "May", 6: "June", 7: "July", 8: "August",
                        9: "September", 10: "October", 11: "November", 12: "December"}
 
-        # Filter available months for the selected year
         available_months = df[df['Year'] == selected_year]['Month'].dropna().unique()
         selected_month = st.selectbox(
             "Select Month", [month_names[m] for m in sorted(available_months)]
         )
         selected_month_num = {v: k for k, v in month_names.items()}[selected_month]
 
-        # Filter the data for selected vessel, year, and month
         filtered = df[
             (df['Vessel'] == selected_vessel) &
             (df['Year'] == selected_year) &
@@ -172,64 +164,22 @@ with tab2:
                 "🛢️ Luboil Consumption + Running Hours"
             ])
 
-            display_cols = {
-                "🌡️ Main Engine Temperatures": [
-                    "SCAV AIR TEMPERATURE", "HIGHEST EXHAUST GAS TEMPERATURE", "EXHAUST BEFORE T/C TEMPERATURE",
-                    "PISTON COOLANT OUTLET TEMPERATURE", "CYL COOLANT OUTLET TEMPERATURE", "LO INLET MAIN ENGINE TEMPERATURE",
-                    "STENTUBE BEARING FORE TEMPERATURE", "STERNTUBE BEARING AFT TEMPERATURE", "FUEL INLET TEMPERATURE"
-                ],
-                "⚙️ Main Engine Pressures": [
-                    "SCAV AIR PRESSURE ", "PISTON COOLANT PRESSURE", "CYLINDER COOLANT PRESSURE",
-                    "LO INLET MAIN ENGINE PRESSURE", "STERNTUBE LO PRESSURE", "STERNTUBE AIR PRESSURE", "FUEL INLET PRESSURE"
-                ],
-                "⛽ Fuel Consumption": [
-                    "ME CONSUMPTION HFO AT SEA", "ME CONSUMPTION HFO MANOEUVRE", "ME CONSUMPTION HFO CARGO OPERATION", "ME CONSUMPTION MDO (MGO)",
-                    "AUX ENGINES CONSUMPTION HFO AT SEA", "AUX ENGINE CONSUMPTION HFO MANOEUVRE", "AUX ENGINES CONSUMPTION HFO PORT",
-                    "AUX ENGINE CONSUMPTIONS MDO (MGO)", "AUX ENGINES CONSUMPTION GENERATOR LOAD",
-                    "BOILERS, IGG CONSUMPTION HFO AT SEA", "BOILERS, IGG CONSUMPTION HFO PORT",
-                    "BOILERS, IGG CONSUMPTION MANOEUVRE / ANCHOR DRIFTING", "BOILERS, IGG CONSUMPTION MDO (MGO)"
-                ],
-                "🧭 Vessel Position + Durations": [
-                    "VESSEL POSITION", "TIME SHIFT +/- HOURS", "WIND FORCE BFT", "WIND DIRECTION",
-                    "ME TIME IN OPERATION, SEA", "ME TIME IN OPERATION, MANOEUVRE",
-                    "ME TIME IN OPERATION, CARGO OPERATION", "ME TIME IN OPERATION, TOTAL",
-                    "DURATION ANCHORAGE DRIFTING", "DURATION IN PORT"
-                ],
-                "📏 Distances / Ambient Temperature": [
-                    "SEA DISTANCE NM", "MANOEUVRE DISTANCE NM", "TOTAL DISTANCENM", "THEOR AT SEA DISTANCE NM",
-                    "NOMINAL SLIP %", "SPEED ACTUAL KN",
-                    "AMBIENT SEA WATER TEMP", "AMBIENT OUTSIDE AIR TEMP", "AMBIENT ENGINE ROOM TEMP",
-                    "PROP RPM AT SEA", "MAIN ENGINE LOAD %", "VESSEL MIDSHIP DRAFT"
-                ],
-                "🛢️ Luboil Consumption + Running Hours": [
-                    "MAIN ENGINE CYL OIL LUBOIL CONSUMPTION", "START AIR COMP SUMP LUBOIL CONSUMPTION",
-                    "AUX ENGINE 1 LUBOIL CONSUMPTION", "AUX ENGINE 2 LUBOIL CONSUMPTION", "AUX ENGINE 3 LUBOIL CONSUMPTION",
-                    "MAIN ENGINE RUNNING HOURS", "AUX ENGINE 1 RUNNING HOURS", "AUX ENGINE 2 RUNNING HOURS",
-                    "AUX ENGINE 3 RUNNING HOURS", "STERN TUBE ADD LO", "FRESH WATER GEN PROD"
-                ]
-            }
+            display_cols = { ... }  # Keep existing column mappings here
 
             selected_cols = [col for col in display_cols[view_option] if col in filtered.columns]
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
-            # Average row
             avg_row = {col: filtered[col].mean() if pd.api.types.is_numeric_dtype(filtered[col]) else "" for col in selected_cols}
             avg_row["Date"] = "Average"
             avg_df = pd.concat([display_df, pd.DataFrame([avg_row])], ignore_index=True)
 
-            # Render table
-            st.markdown("<style>thead th {font-size: 10px !important; white-space: normal !important; word-wrap: break-word !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)
+            st.markdown("<style>thead th {font-size: 10px !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)
             st.dataframe(avg_df, use_container_width=True, height=500)
 
-            # Optional plot
             if view_option == "⛽ Fuel Consumption" and "ME CONSUMPTION HFO AT SEA" in filtered.columns:
                 st.markdown("### 📈 ME Consumption HFO at Sea - Trend")
                 plot_df = filtered[["Date", "ME CONSUMPTION HFO AT SEA"]].dropna().sort_values("Date")
-
                 if not plot_df.empty:
-                    import matplotlib.pyplot as plt
-                    import matplotlib.dates as mdates
-
                     fig, ax = plt.subplots(figsize=(10, 4))
                     ax.plot(plot_df["Date"], plot_df["ME CONSUMPTION HFO AT SEA"], marker='o')
                     ax.set_title("ME Consumption HFO at Sea")

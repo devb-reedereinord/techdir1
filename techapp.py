@@ -31,7 +31,7 @@ def load_data():
         df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     for col in df.columns:
         try:
-            df[col] = pd.to_numeric(df[col], errors='ignore')
+            df[col] = pd.to_numeric(df[col])  # updated per warning
         except:
             continue
     return df

@@ -37,14 +37,17 @@ def load_data():
     return df
 
 def append_engine_log(new_row):
-    # Format the date to match Google Sheets' expected format (e.g., 7/12/2024 for 12 July 2024)
+    # Convert the Date from yyyy-mm-dd (input) to dd/mm/yyyy string for Sheets
     if 'Date' in new_row:
         try:
-            parsed = datetime.strptime(new_row['Date'], "%Y-%m-%d")
-            new_row['Date'] = parsed.strftime("%d/%m/%Y")  # Convert to DD/MM/YYYY
-        except Exception:
-            pass
-    sheet.append_row(list(new_row.values()))
+            if isinstance(new_row['Date'], str):
+                parsed = datetime.strptime(new_row['Date'], "%Y-%m-%d")
+            else:
+                parsed = new_row['Date']
+            new_row['Date'] = parsed.strftime("%d/%m/%Y")
+        except Exception as e:
+            print("Date format error:", e)
+    sheet.append_row([str(new_row.get(k, "")) for k in new_row])
 
 
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"

@@ -28,7 +28,7 @@ def load_data():
     df = pd.DataFrame(records, columns=clean_headers)
 
     if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], dayfirst=True, errors='coerce')
     for col in df.columns:
         try:
             df[col] = pd.to_numeric(df[col])  # updated per warning

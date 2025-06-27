@@ -225,8 +225,14 @@ with tab2:
             selected_cols = [col for col in view_column_mappings[view_option] if col in filtered.columns]
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
-            avg_row = {col: filtered[col].mean() if pd.api.types.is_numeric_dtype(filtered[col]) else "" for col in selected_cols}
-            avg_row["Date"] = "Average"
+            avg_row = {}
+            for col in display_df.columns:
+                if col == "Date":
+                    avg_row[col] = "Average"
+                elif pd.api.types.is_numeric_dtype(display_df[col]):
+                    avg_row[col] = display_df[col].mean()
+                else:
+                    avg_row[col] = ""
             avg_df = pd.concat([display_df, pd.DataFrame([avg_row])], ignore_index=True)
 
             st.markdown("<style>thead th {font-size: 10px !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)

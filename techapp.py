@@ -59,7 +59,6 @@ st.markdown(
 )
 
 # Load engine log data
-df = load_data()
 
 # ---------------- TAB STRUCTURE ----------------
 tab1, tab2 = st.tabs(["📥 Engine Log Entry", "📊 Engine Log Dashboard"])
@@ -137,6 +136,7 @@ with tab1:
 with tab2:
     st.header("📊 Engine Log Dashboard")
 
+    df = load_data()
     df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df = df[df['Date'].notna()]
 

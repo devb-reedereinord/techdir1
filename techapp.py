@@ -225,6 +225,10 @@ with tab2:
             selected_cols = [col for col in view_column_mappings[view_option] if col in filtered.columns]
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
+            # --- FIX: Ensure unique and stripped column names ---
+            display_df.columns = pd.io.parsers.ParserBase({'names': display_df.columns})._maybe_dedup_names(display_df.columns)
+            display_df.columns = [col.strip() for col in display_df.columns]
+
             avg_row = {}
             for col in display_df.columns:
                 if col == "Date":
@@ -233,6 +237,7 @@ with tab2:
                     avg_row[col] = display_df[col].mean()
                 else:
                     avg_row[col] = ""
+
             avg_df = pd.concat([display_df, pd.DataFrame([avg_row])], ignore_index=True)
 
             st.markdown("<style>thead th {font-size: 10px !important;} tbody td {font-size: 12px !important;}</style>", unsafe_allow_html=True)

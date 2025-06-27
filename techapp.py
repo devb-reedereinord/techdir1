@@ -176,9 +176,44 @@ with tab2:
                 "🛢️ Luboil Consumption + Running Hours"
             ])
 
-            display_cols = { ... }  # Keep existing column mappings here
+            view_column_mappings = {
+                "🌡️ Main Engine Temperatures": [
+                    "SCAV AIR TEMPERATURE", "HIGHEST EXHAUST GAS TEMPERATURE", "EXHAUST BEFORE T/C TEMPERATURE",
+                    "PISTON COOLANT OUTLET TEMPERATURE", "CYL COOLANT OUTLET TEMPERATURE", "LO INLET MAIN ENGINE TEMPERATURE",
+                    "STENTUBE BEARING FORE TEMPERATURE", "STERNTUBE BEARING AFT TEMPERATURE", "FUEL INLET TEMPERATURE"
+                ],
+                "⚙️ Main Engine Pressures": [
+                    "SCAV AIR PRESSURE", "PISTON COOLANT PRESSURE", "CYLINDER COOLANT PRESSURE",
+                    "LO INLET MAIN ENGINE PRESSURE", "STERNTUBE LO PRESSURE", "STERNTUBE AIR PRESSURE", "FUEL INLET PRESSURE"
+                ],
+                "⛽ Fuel Consumption": [
+                    "ME CONSUMPTION HFO AT SEA", "ME CONSUMPTION HFO MANOEUVRE", "ME CONSUMPTION HFO CARGO OPERATION", "ME CONSUMPTION MDO (MGO)",
+                    "AUX ENGINES CONSUMPTION HFO AT SEA", "AUX ENGINE CONSUMPTION HFO MANOEUVRE", "AUX ENGINES CONSUMPTION HFO PORT",
+                    "AUX ENGINE CONSUMPTIONS MDO (MGO)", "AUX ENGINES CONSUMPTION GENERATOR LOAD",
+                    "BOILERS, IGG CONSUMPTION HFO AT SEA", "BOILERS, IGG CONSUMPTION HFO PORT",
+                    "BOILERS, IGG CONSUMPTION MANOEUVRE / ANCHOR DRIFTING", "BOILERS, IGG CONSUMPTION MDO (MGO)"
+                ],
+                "🧭 Vessel Position + Durations": [
+                    "VESSEL POSITION", "TIME SHIFT +/- HOURS", "WIND FORCE BFT", "WIND DIRECTION",
+                    "ME TIME IN OPERATION, SEA", "ME TIME IN OPERATION, MANOEUVRE",
+                    "ME TIME IN OPERATION, CARGO OPERATION", "ME TIME IN OPERATION, TOTAL",
+                    "DURATION ANCHORAGE DRIFTING", "DURATION IN PORT"
+                ],
+                "📏 Distances / Ambient Temperature": [
+                    "SEA DISTANCE NM", "MANOEUVRE DISTANCE NM", "TOTAL DISTANCENM", "THEOR AT SEA DISTANCE NM",
+                    "NOMINAL SLIP %", "SPEED ACTUAL KN",
+                    "AMBIENT SEA WATER TEMP", "AMBIENT OUTSIDE AIR TEMP", "AMBIENT ENGINE ROOM TEMP",
+                    "PROP RPM AT SEA", "MAIN ENGINE LOAD %", "VESSEL MIDSHIP DRAFT"
+                ],
+                "🛢️ Luboil Consumption + Running Hours": [
+                    "MAIN ENGINE CYL OIL LUBOIL CONSUMPTION", "START AIR COMP SUMP LUBOIL CONSUMPTION",
+                    "AUX ENGINE 1 LUBOIL CONSUMPTION", "AUX ENGINE 2 LUBOIL CONSUMPTION", "AUX ENGINE 3 LUBOIL CONSUMPTION",
+                    "MAIN ENGINE RUNNING HOURS", "AUX ENGINE 1 RUNNING HOURS", "AUX ENGINE 2 RUNNING HOURS",
+                    "AUX ENGINE 3 RUNNING HOURS", "STERN TUBE ADD LO", "FRESH WATER GEN PROD"
+                ]
+            }
 
-            selected_cols = [col for col in display_cols[view_option] if col in filtered.columns]
+            selected_cols = [col for col in view_column_mappings[view_option] if col in filtered.columns]
             display_df = filtered[['Date'] + selected_cols].sort_values("Date")
 
             avg_row = {col: filtered[col].mean() if pd.api.types.is_numeric_dtype(filtered[col]) else "" for col in selected_cols}

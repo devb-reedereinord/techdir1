@@ -113,26 +113,6 @@ with tab1:
                     else:
                         form_data[clean_col] = st.text_input(clean_col)
 
-        if date.day == 1:
-            st.markdown("### 🔁 1st of Month Running Hours & ROB")
-            with st.expander("1st of Month - Running Hours"):
-                form_data["1ST OF MONTH ME RUNNING HOURS"] = st.number_input("1st of Month ME Running Hours", step=0.1)
-                form_data["1ST OF MONTH AE1 RUNNING HOURS"] = st.number_input("1st of Month AE1 Running Hours", step=0.1)
-                form_data["1ST OF MONTH AE2 RUNNING HOURS"] = st.number_input("1st of Month AE2 Running Hours", step=0.1)
-                form_data["1ST OF MONTH AE3 RUNNING HOURS"] = st.number_input("1st of Month AE3 Running Hours", step=0.1)
-
-            with st.expander("1st of Month - ROB & Oils"):
-                form_data["1ST OF MONTH ROB HFO"] = st.number_input("1st of Month ROB HFO", step=0.1)
-                form_data["1ST OF MONTH ROB MDO"] = st.number_input("1st of Month ROB MDO", step=0.1)
-                form_data["1ST OF MONTH ME CYL OIL"] = st.number_input("1st of Month ME CYL OIL", step=0.1)
-                form_data["1ST OF MONTH AE SUMP OIL"] = st.number_input("1st of Month AE SUMP OIL", step=0.1)
-        else:
-            for key in [
-                "1ST OF MONTH ME RUNNING HOURS", "1ST OF MONTH AE1 RUNNING HOURS", "1ST OF MONTH AE2 RUNNING HOURS",
-                "1ST OF MONTH AE3 RUNNING HOURS", "1ST OF MONTH ROB HFO", "1ST OF MONTH ROB MDO",
-                "1ST OF MONTH ME CYL OIL", "1ST OF MONTH AE SUMP OIL"]:
-                form_data[key] = ""
-
         with st.expander("Remarks"):
             form_data["Remarks"] = st.text_area("Remarks")
 

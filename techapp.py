@@ -37,16 +37,27 @@ def load_data():
     return df
 
 def append_engine_log(new_row):
+    headers = sheet.row_values(1)  # Get the header row from the sheet
+    row = []
+
+    for col in headers:
+        value = new_row.get(col.strip(), "")  # Match form input by header name
+        if isinstance(value, float) and pd.isna(value):  # Handle NaNs
+            value = ""
+        row.append(str(value))
+
+    # Format date properly
     if 'Date' in new_row:
         try:
             if isinstance(new_row['Date'], str):
                 parsed = datetime.strptime(new_row['Date'], "%Y-%m-%d")
             else:
                 parsed = new_row['Date']
-            new_row['Date'] = parsed.strftime("%Y-%m-%d")  # use ISO format
+            row[headers.index('Date')] = parsed.strftime("%Y-%m-%d")
         except Exception as e:
             print("Date format error:", e)
-    sheet.append_row([str(new_row.get(k, "")) for k in new_row])
+
+    sheet.append_row(row)
 
 
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"

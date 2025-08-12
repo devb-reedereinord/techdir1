@@ -162,7 +162,7 @@ NEW_SECTIONS = {
 
 # ---------------- TAB 1: Data Entry ----------------
 with tab1:
-    st.header("🔧 Add Engine Log Entry (per Engine Machinery Log Abstract)")
+    st.header("🔧 Add Engine Log Entry")
     vessel_list = [
         "Nordmarlin", "Norddolphin", "Nordindepndence", "Nordpenguin", "Nordtokyo",
         "Nordorse", "Nordtulip", "Nordlotus", "Nordorchid", "Nordsymphony",
@@ -324,4 +324,5 @@ with tab2:
                     st.pyplot(fig)
                 else:
                     st.info("No data available for plotting.")
+
 

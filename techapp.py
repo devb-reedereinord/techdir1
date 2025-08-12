@@ -212,33 +212,34 @@ with tab1:
 # ---------------- TAB 2: Dashboard ----------------
 with tab2:
     st.header("📊 Engine Log Dashboard")
+
     df = load_data()
+    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
+    df = df[df['Date'].notna()]
 
-    if df.empty or "Vessel" not in df.columns or df["Date"].isna().all():
-        st.warning("No valid data found in engine log file.")
-    else:
-        df = df[df["Date"].notna()].copy()
-        df["Year"] = df["Date"].dt.year
-        df["Month"] = df["Date"].dt.month
+    if not df.empty and "Vessel" in df.columns:
+        df['Year'] = df['Date'].dt.year
+        df['Month'] = df['Date'].dt.month
 
-        vessels = sorted([v for v in df["Vessel"].dropna().unique()])
-        selected_vessel = st.selectbox("Select Vessel", vessels)
-        selected_year = st.selectbox("Select Year", sorted(df["Year"].dropna().unique()))
+        vessels = df["Vessel"].dropna().unique()
+        selected_vessel = st.selectbox("Select Vessel", sorted(vessels))
 
-        month_names = {
-            1: "January", 2: "February", 3: "March", 4: "April", 5: "May", 6: "June",
-            7: "July", 8: "August", 9: "September", 10: "October", 11: "November", 12: "December",
-        }
-        available_months = sorted(df[df["Year"] == selected_year]["Month"].dropna().unique())
-        selected_month = st.selectbox("Select Month", [month_names[m] for m in available_months])
-        month_to_num = {v: k for k, v in month_names.items()}
-        selected_month_num = month_to_num[selected_month]
+        selected_year = st.selectbox("Select Year", sorted(df['Year'].dropna().unique()))
+        month_names = {1: "January", 2: "February", 3: "March", 4: "April",
+                       5: "May", 6: "June", 7: "July", 8: "August",
+                       9: "September", 10: "October", 11: "November", 12: "December"}
+
+        available_months = df[df['Year'] == selected_year]['Month'].dropna().unique()
+        selected_month = st.selectbox(
+            "Select Month", [month_names[m] for m in sorted(available_months)]
+        )
+        selected_month_num = {v: k for k, v in month_names.items()}[selected_month]
 
         filtered = df[
-            (df["Vessel"] == selected_vessel)
-            & (df["Year"] == selected_year)
-            & (df["Month"] == selected_month_num)
-        ].copy()
+            (df['Vessel'] == selected_vessel) &
+            (df['Year'] == selected_year) &
+            (df['Month'] == selected_month_num)
+        ]
 
         if filtered.empty:
             st.warning("No data available for the selected filters.")
@@ -323,3 +324,4 @@ with tab2:
                     st.pyplot(fig)
                 else:
                     st.info("No data available for plotting.")
+

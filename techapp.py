@@ -58,7 +58,35 @@ def append_engine_log(new_row):
             print("Date format error:", e)
 
     sheet.append_row(row)
+    
+# -------- Helper: reusable multi-line plot --------
+def plot_lines(df, date_col, y_cols, title, y_label):
+    available = [c for c in y_cols if c in df.columns]
+    if not available:
+        st.info(f"No matching columns found for: {', '.join(y_cols)}")
+        return
 
+    plot_df = df[[date_col] + available].copy()
+    # Drop rows where ALL y columns are NaN/empty
+    plot_df = plot_df.dropna(how="all", subset=available)
+
+    if plot_df.empty:
+        st.info("No data available for plotting.")
+        return
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    for col in available:
+        try:
+            ax.plot(plot_df[date_col], pd.to_numeric(plot_df[col], errors="coerce"), marker="o", label=col)
+        except Exception:
+            continue
+    ax.set_title(title)
+    ax.set_xlabel("Date")
+    ax.set_ylabel(y_label)
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))
+    ax.grid(True)
+    ax.legend(loc="best", fontsize=8)
+    st.pyplot(fig)
 
 logo_path = "images/Reederei_Nord_Logo_CMYK_blue_V1.jpg"
 st.set_page_config(page_title="Engine Log Dashboard", layout="wide")
@@ -294,35 +322,74 @@ with tab2:
             )
             st.dataframe(avg_df, use_container_width=True, height=500)
 
-            # One simple example chart per view (optional & lightweight)
-            if view_option == "🧭 Voyage Condition" and "Nominal slip %" in display_df.columns:
-                st.markdown("### 📈 Nominal Slip – Trend")
-                plot_df = display_df[["Date", "Nominal slip %"]].dropna()
-                if not plot_df.empty:
-                    fig, ax = plt.subplots(figsize=(10, 4))
-                    ax.plot(plot_df["Date"], plot_df["Nominal slip %"], marker="o")
-                    ax.set_title("Nominal Slip %")
-                    ax.set_xlabel("Date")
-                    ax.set_ylabel("%")
-                    ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))
-                    ax.grid(True)
-                    st.pyplot(fig)
-                else:
-                    st.info("No data available for plotting.")
+            # -------------------- CHARTS PER VIEW --------------------
+            if view_option == "🌡️ Main Engine Temperatures":
+                st.markdown("### 📈 Exhaust Gas Temps – Cyl 1–6")
+                ex_cols = [f"Exhaust gas temp cyl {i} (°C)" for i in range(1, 7)]
+                plot_lines(display_df, "Date", ex_cols, "Exhaust Gas Temps per Cylinder", "°C")
 
-            if view_option == "🛢️ Main Engine LO consumption" and "ME Running Hours" in display_df.columns:
-                st.markdown("### 📈 ME Running Hours – Trend")
-                plot_df = display_df[["Date", "ME Running Hours"]].dropna()
-                if not plot_df.empty:
-                    fig, ax = plt.subplots(figsize=(10, 4))
-                    ax.plot(plot_df["Date"], plot_df["ME Running Hours"], marker="o")
-                    ax.set_title("ME Running Hours")
-                    ax.set_xlabel("Date")
-                    ax.set_ylabel("Hours")
-                    ax.xaxis.set_major_formatter(mdates.DateFormatter("%d/%m/%y"))
-                    ax.grid(True)
-                    st.pyplot(fig)
-                else:
-                    st.info("No data available for plotting.")
+                st.divider()
+
+                st.markdown("### 📈 Under Piston Temps – Cyl 1–6")
+                under_cols = [f"Under piston temp cyl {i} (°C)" for i in range(1, 7)]
+                plot_lines(display_df, "Date", under_cols, "Under Piston Temps per Cylinder", "°C")
+
+            elif view_option == "⚙️ Main Engine Pressures":
+                st.markdown("### 📈 Differential Pressures")
+                dp_cols = [
+                    "ΔP ME air cooler (bar)",
+                    "ΔP Exhaust Gas boiler (bar)",
+                    "ΔP ME T/C air inlet filter (bar)",
+                ]
+                plot_lines(display_df, "Date", dp_cols, "Differential Pressures", "bar")
+
+                st.divider()
+
+                st.markdown("### 📈 FO/LO Inlet & T/C LO Pressures")
+                inlet_cols = [
+                    "FO inlet pressure (bar)",
+                    "LO inlet pressure (bar)",
+                    "Turbocharger LO inlet pressure (bar)",
+                ]
+                plot_lines(display_df, "Date", inlet_cols, "FO/LO Inlet & T/C LO Pressures", "bar")
+
+            elif view_option == "🔌 AE Related Information":
+                # Temperatures per AE
+                for i in [1, 2, 3]:
+                    st.markdown(f"### 📈 AE{i} Temperatures")
+                    ae_temp_cols = [
+                        f"AE{i} highest exhaust gas temp (°C)",
+                        f"AE{i} T/C inlet temp (°C)",
+                        f"AE{i} T/C outlet temp (°C)",
+                    ]
+                    plot_lines(display_df, "Date", ae_temp_cols, f"AE{i} Temperatures", "°C")
+                    st.divider()
+
+                # LO consumption (all AEs on one chart)
+                st.markdown("### 📈 AE LO Consumption")
+                ae_lo_cols = [f"AE{i} LO consumption (l)" for i in [1, 2, 3]]
+                plot_lines(display_df, "Date", ae_lo_cols, "AE LO Consumption", "l")
+
+                st.divider()
+
+                # Average Load % (all AEs on one chart)
+                st.markdown("### 📈 AE Average Load %")
+                ae_load_cols = [f"AE{i} average load %" for i in [1, 2, 3]]
+                plot_lines(display_df, "Date", ae_load_cols, "AE Average Load %", "%")
+
+            elif view_option == "🧭 Voyage Condition":
+                if "Nominal slip %" in display_df.columns:
+                    st.markdown("### 📈 Nominal Slip – Trend")
+                    plot_lines(display_df, "Date", ["Nominal slip %"], "Nominal Slip %", "%")
+
+            elif view_option == "🛢️ Main Engine LO consumption":
+                if "ME Running Hours" in display_df.columns:
+                    st.markdown("### 📈 ME Running Hours – Trend")
+                    plot_lines(display_df, "Date", ["ME Running Hours"], "ME Running Hours", "Hours")
+
+
+
+
+
 
 

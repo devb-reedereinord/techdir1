@@ -383,9 +383,13 @@ with tab2:
                     plot_lines(display_df, "Date", ["Nominal slip %"], "Nominal Slip %", "%")
 
             elif view_option == "🛢️ Main Engine LO consumption":
-                if "ME Running Hours" in display_df.columns:
-                    st.markdown("### 📈 ME Running Hours – Trend")
-                    plot_lines(display_df, "Date", ["ME Running Hours"], "ME Running Hours", "Hours")
+                st.markdown("### 📈 ME LO Consumption (Sump & Cylinder Oil)")
+                lo_cols = [
+                    "ME sump LO consumption (l)",
+                    "ME cylinder oil consumption per day (l)",
+                ]
+                plot_lines(display_df, "Date", lo_cols, "ME LO Consumption", "l")
+
 
 
 

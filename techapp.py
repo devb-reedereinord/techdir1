@@ -147,9 +147,9 @@ ME_TEMPS_FIELDS = {
 
 ME_PRESS_FIELDS = {
     "Scavenge air pressure (bar)": {"type": "number"},
-    "ΔP ME air cooler (bar)": {"type": "number"},
-    "ΔP Exhaust Gas boiler (bar)": {"type": "number"},
-    "ΔP ME T/C air inlet filter (bar)": {"type": "number"},
+    "ΔP ME air cooler (MMWC)": {"type": "number"},
+    "ΔP Exhaust Gas boiler (MMWC)": {"type": "number"},
+    "ΔP ME T/C air inlet filter (MMWC)": {"type": "number"},
     "FO inlet pressure (bar)": {"type": "number"},
     "LO inlet pressure (bar)": {"type": "number"},
     "Turbocharger LO inlet pressure (bar)": {"type": "number"},
@@ -389,6 +389,7 @@ with tab2:
                     "ME cylinder oil consumption per day (l)",
                 ]
                 plot_lines(display_df, "Date", lo_cols, "ME LO Consumption", "l")
+
 
 
 

@@ -337,9 +337,9 @@ with tab2:
             elif view_option == "⚙️ Main Engine Pressures":
                 st.markdown("### 📈 Differential Pressures")
                 dp_cols = [
-                    "ΔP ME air cooler (bar)",
-                    "ΔP Exhaust Gas boiler (bar)",
-                    "ΔP ME T/C air inlet filter (bar)",
+                    "ΔP ME air cooler (MMWC)",
+                    "ΔP Exhaust Gas boiler (MMWC)",
+                    "ΔP ME T/C air inlet filter (MMWC)",
                 ]
                 plot_lines(display_df, "Date", dp_cols, "Differential Pressures", "bar")
 
@@ -389,6 +389,7 @@ with tab2:
                     "ME cylinder oil consumption per day (l)",
                 ]
                 plot_lines(display_df, "Date", lo_cols, "ME LO Consumption", "l")
+
 
 
 

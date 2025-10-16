@@ -193,7 +193,7 @@ with tab1:
     st.header("🔧 Add Engine Log Entry")
     vessel_list = [
         "Nordmarlin", "Norddolphin", "Nordindepndence", "Nordpenguin", "Nordtokyo",
-        "Nordorse", "Nordtulip", "Nordlotus", "Nordorchid", "Nordsymphony",
+        "Nordrose", "Nordtulip", "Nordlotus", "Nordorchid", "Nordsymphony",
         "Angelic Anna", "Radiant Reb",
     ]
 
@@ -389,6 +389,7 @@ with tab2:
                     "ME cylinder oil consumption per day (l)",
                 ]
                 plot_lines(display_df, "Date", lo_cols, "ME LO Consumption", "l")
+
 
 
 

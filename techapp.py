@@ -348,15 +348,25 @@ with tab2:
                     display_df.columns = [c.strip() for c in display_df.columns]
 
                     # Add Average row for numeric cols
+                    ZERO_ALLOWED_COLS = {f"AE{i} LO consumption (l)" for i in [1, 2, 3]}
+
                     avg_row = {}
                     for col in display_df.columns:
                         if col == "Date":
                             avg_row[col] = "Average"
-                        elif pd.api.types.is_numeric_dtype(display_df[col]):
-                            avg_row[col] = display_df[col].mean()
+                            continue
+                    
+                        # Try numeric conversion
+                        s = pd.to_numeric(display_df[col], errors="coerce")
+                    
+                        if pd.api.types.is_numeric_dtype(s):
+                            # Exclude zeros from averages unless it's an AE LO consumption column
+                            if col not in ZERO_ALLOWED_COLS:
+                                s = s.mask(s == 0)
+                            avg_row[col] = s.mean(skipna=True)
                         else:
                             avg_row[col] = ""
-
+                    
                     avg_df = pd.concat([display_df, pd.DataFrame([avg_row])], ignore_index=True)
                     st.markdown(
                         "<style>thead th {font-size: 10px !important;} tbody td {font-size: 12px !important;}</style>",
@@ -432,6 +442,7 @@ with tab2:
             st.info("Unlock access to this vessel to view its dashboard.")
     else:
         st.warning("No data available to display.")
+
 
 
 

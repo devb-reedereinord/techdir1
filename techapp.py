@@ -178,8 +178,8 @@ ME_TEMPS_FIELDS = {
     "Air cooler water temp OUT (°C)": {"type": "number"},
     "Air cooler gas temp IN (°C)": {"type": "number"},
     "Air cooler gas temp OUT (°C)": {"type": "number"},
-    "Cooling water temp IN (°C)": {"type": "number"},
-    "Cooling water temp OUT (°C)": {"type": "number"},
+    "Jacket Cooling water temp IN (°C)": {"type": "number"},
+    "Jacket Cooling water temp OUT (°C)": {"type": "number"},
     "Stern tube bearings temp (°C)": {"type": "number"},
 }
 
@@ -191,17 +191,17 @@ ME_PRESS_FIELDS = {
     "FO inlet pressure (bar)": {"type": "number"},
     "LO inlet pressure (bar)": {"type": "number"},
     "Turbocharger LO inlet pressure (bar)": {"type": "number"},
-    "Cooling water inlet pressure (bar)": {"type": "number"},
+    "Jacket Cooling water inlet pressure (bar)": {"type": "number"},
     "Hydraulic oil pressure after filter (bar)": {"type": "number"},
-    "FO filter flushing amount per day (l)": {"type": "number"},
-    "LO filter flushing amount per day (l)": {"type": "number"},
+    "FO filter flushing amount per day (times)": {"type": "number"},
+    "LO filter flushing amount per day (times)": {"type": "number"},
     "ME water-in-oil monitor %": {"type": "number"},
 }
 
 ME_LO_FIELDS = {
     "ME sump LO consumption (l)": {"type": "number"},
     "ME cylinder oil consumption per day (l)": {"type": "number"},
-    "ME Running Hours": {"type": "number"},
+    "ME running hours per day": {"type": "number"},
 }
 
 AE_FIELDS = {
@@ -209,7 +209,7 @@ AE_FIELDS = {
     **{f"AE{i} T/C inlet temp (°C)": {"type": "number"} for i in [1, 2, 3]},
     **{f"AE{i} T/C outlet temp (°C)": {"type": "number"} for i in [1, 2, 3]},
     **{f"AE{i} LO consumption (l)": {"type": "number"} for i in [1, 2, 3]},
-    **{f"AE{i} average load %": {"type": "number"} for i in [1, 2, 3]},
+    **{f"AE{i} average load (kW)": {"type": "number"} for i in [1, 2, 3]},
     **{f"AE{i} Running Hours": {"type": "number"} for i in [1, 2, 3]},
 }
 
@@ -235,27 +235,51 @@ with tab1:
 
     # Gate the form behind the auth unlock
     if vessel and auth_widget(vessel, context_key="entry"):
-        # Form dict
-        form_data = {"Date": date.strftime("%Y-%m-%d"), "Vessel": vessel}
 
-        with st.form("engine_log_form_new"):
-            # Voyage condition first (compact controls)
-            with st.expander("Voyage Condition", expanded=True):
-                for label, meta in VOYAGE_FIELDS.items():
-                    key = label
-                    if meta["type"] == "number":
-                        form_data[key] = st.number_input(label, step=0.1)
-                    elif meta["type"] == "select":
-                        form_data[key] = st.selectbox(label, meta["options"])
-                    else:
-                        form_data[key] = st.text_input(label)
+        # ---- Confirmation page ----
+        if st.session_state.get("confirm_pending"):
+            pending = st.session_state["confirm_pending"]
+            st.subheader("📋 Please review your entry before confirming")
 
-            # Other sections
             for section_name, fields in NEW_SECTIONS.items():
-                if section_name == "Voyage Condition":
-                    continue
-                with st.expander(section_name):
-                    for label, meta in fields.items():
+                with st.expander(section_name, expanded=True):
+                    for label in fields:
+                        val = pending.get(label, "")
+                        new_val = st.text_input(label, value=str(val) if val != 0.0 else "0.0",
+                                                key=f"confirm_{label}")
+                        pending[label] = new_val
+
+            remarks_val = pending.get("Remarks", "")
+            pending["Remarks"] = st.text_area("Remarks", value=remarks_val, key="confirm_remarks")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("✅ Confirm & Save", type="primary"):
+                    # Convert numeric strings back to float where appropriate
+                    for section_name, fields in NEW_SECTIONS.items():
+                        for label, meta in fields.items():
+                            if meta["type"] == "number":
+                                try:
+                                    pending[label] = float(pending[label])
+                                except (ValueError, TypeError):
+                                    pending[label] = 0.0
+                    append_engine_log(pending)
+                    del st.session_state["confirm_pending"]
+                    st.success("Engine log entry saved.")
+                    st.rerun()
+            with col2:
+                if st.button("✏️ Go Back & Edit"):
+                    del st.session_state["confirm_pending"]
+                    st.rerun()
+
+        else:
+            # ---- Data entry form ----
+            form_data = {"Date": date.strftime("%Y-%m-%d"), "Vessel": vessel}
+
+            with st.form("engine_log_form_new"):
+                # Voyage condition first (compact controls)
+                with st.expander("Voyage Condition", expanded=True):
+                    for label, meta in VOYAGE_FIELDS.items():
                         key = label
                         if meta["type"] == "number":
                             form_data[key] = st.number_input(label, step=0.1)
@@ -264,13 +288,26 @@ with tab1:
                         else:
                             form_data[key] = st.text_input(label)
 
-            remarks = st.text_area("Remarks")
-            form_data["Remarks"] = remarks
+                # Other sections
+                for section_name, fields in NEW_SECTIONS.items():
+                    if section_name == "Voyage Condition":
+                        continue
+                    with st.expander(section_name):
+                        for label, meta in fields.items():
+                            key = label
+                            if meta["type"] == "number":
+                                form_data[key] = st.number_input(label, step=0.1)
+                            elif meta["type"] == "select":
+                                form_data[key] = st.selectbox(label, meta["options"])
+                            else:
+                                form_data[key] = st.text_input(label)
 
-            if st.form_submit_button("Submit Engine Log Entry"):
-                append_engine_log(form_data)
-                st.success("Engine log entry saved.")
-                st.rerun()
+                remarks = st.text_area("Remarks")
+                form_data["Remarks"] = remarks
+
+                if st.form_submit_button("Review & Submit"):
+                    st.session_state["confirm_pending"] = form_data
+                    st.rerun()
     else:
         st.info("Unlock access to this vessel to add a new entry.")
 

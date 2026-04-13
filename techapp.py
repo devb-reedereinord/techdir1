@@ -70,9 +70,11 @@ def load_data():
     df = pd.DataFrame(records, columns=clean_headers)
 
     if 'Date' in df.columns:
-        df['Date'] = pd.to_datetime(df['Date'], format="%Y-%m-%d", errors='coerce')
+        df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
 
     for col in df.columns:
+        if col == 'Date':
+            continue
         try:
             df[col] = pd.to_numeric(df[col])
         except:
@@ -316,7 +318,6 @@ with tab2:
     st.header("📊 Engine Log Dashboard")
 
     df = load_data()
-    df['Date'] = pd.to_datetime(df['Date'], errors='coerce')
     df = df[df['Date'].notna()]
 
     if not df.empty and "Vessel" in df.columns:
